@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focus Blues Lab — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c14;
+    --bg2: #0d1220;
+    --bg3: #121828;
+    --border: rgba(99,140,255,0.12);
+    --border2: rgba(99,140,255,0.25);
+    --blue: #4f7aff;
+    --blue-dim: rgba(79,122,255,0.15);
+    --purple: #8b5cf6;
+    --purple-dim: rgba(139,92,246,0.15);
+    --orange: #f97316;
+    --orange-dim: rgba(249,115,22,0.15);
+    --green: #22d3a0;
+    --green-dim: rgba(34,211,160,0.12);
+    --red: #f43f5e;
+    --red-dim: rgba(244,63,94,0.12);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251,191,36,0.12);
+    --text: #e2e8f7;
+    --text2: #7a8aad;
+    --text3: #3d4d6a;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(79,122,255,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 80% 80%, rgba(139,92,246,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon {
+    width: 42px; height: 42px;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--blue-dim);
+    font-size: 20px;
+  }
+
+  .logo-text h1 {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .logo-text p {
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--green);
+    letter-spacing: 0.08em;
+  }
+
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  .next-update {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+  }
+
+  .grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (max-width: 700px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.2rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .stat-card:hover { border-color: var(--border2); }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent, var(--blue)), transparent);
+    opacity: 0.6;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: var(--mono);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .badge-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+  .badge.success { background: var(--green-dim); color: var(--green); }
+  .badge.success .badge-dot { background: var(--green); }
+  .badge.error { background: var(--red-dim); color: var(--red); }
+  .badge.error .badge-dot { background: var(--red); }
+  .badge.running { background: var(--blue-dim); color: var(--blue); }
+  .badge.running .badge-dot { background: var(--blue); animation: pulse 1s infinite; }
+  .badge.waiting { background: var(--amber-dim); color: var(--amber); }
+  .badge.waiting .badge-dot { background: var(--amber); }
+  .badge.active { background: var(--green-dim); color: var(--green); }
+  .badge.active .badge-dot { background: var(--green); }
+  .badge.inactive { background: rgba(122,138,173,0.1); color: var(--text2); }
+  .badge.inactive .badge-dot { background: var(--text2); }
+  .badge.online { background: var(--green-dim); color: var(--green); }
+  .badge.online .badge-dot { background: var(--green); }
+  .badge.offline { background: var(--red-dim); color: var(--red); }
+  .badge.offline .badge-dot { background: var(--red); }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1.2rem;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .panel-title {
+    font-size: 11px;
+    font-family: var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text2);
+  }
+
+  .panel-count {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+  }
+
+  .exec-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.2rem;
+    border-bottom: 0.5px solid var(--border);
+    transition: background 0.2s;
+  }
+
+  .exec-row:last-child { border-bottom: none; }
+  .exec-row:hover { background: var(--bg3); }
+
+  .exec-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .exec-time {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text2);
+  }
+
+  .exec-duration {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+  }
+
+  .empty {
+    padding: 2rem 1.2rem;
+    text-align: center;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text3);
+  }
+
+  .pipeline-panel {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .pipeline-title {
+    font-size: 11px;
+    font-family: var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 1.2rem;
+  }
+
+  .pipeline-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .pipeline-step {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .step-box {
+    background: var(--bg3);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text2);
+    white-space: nowrap;
+    transition: all 0.3s;
+  }
+
+  .step-box.done { border-color: rgba(34,211,160,0.3); color: var(--green); background: var(--green-dim); }
+  .step-box.running { border-color: rgba(79,122,255,0.4); color: var(--blue); background: var(--blue-dim); animation: glow 1.5s infinite; }
+  .step-box.error { border-color: rgba(244,63,94,0.3); color: var(--red); background: var(--red-dim); }
+  .step-box.pending { opacity: 0.4; }
+
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(79,122,255,0); }
+    50% { box-shadow: 0 0 12px rgba(79,122,255,0.3); }
+  }
+
+  .step-arrow {
+    width: 28px;
+    height: 1px;
+    background: var(--border2);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .step-arrow::after {
+    content: '';
+    position: absolute;
+    right: -1px; top: -3px;
+    border: 3px solid transparent;
+    border-left: 5px solid var(--border2);
+  }
+
+  footer {
+    padding-top: 1.5rem;
+    border-top: 0.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-text {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+  }
+
+  .footer-slogan {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🎸</div>
+      <div class="logo-text">
+        <h1>FOCUS BLUES LAB</h1>
+        <p>Pipeline dashboard</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        <span>LIVE</span>
+      </div>
+      <div class="next-update" id="next-update">atualizando...</div>
+    </div>
+  </header>
+
+  <div class="grid-4" id="stat-cards">
+    <div class="stat-card" style="--accent: var(--blue);">
+      <div class="stat-label">FBL-01</div>
+      <div class="stat-value" id="s-fbl01"><span style="color:var(--text3)">—</span></div>
+      <div class="stat-sub">Gerar prompts · Seg–Sex 5h</div>
+    </div>
+    <div class="stat-card" style="--accent: var(--purple);">
+      <div class="stat-label">FBL-02</div>
+      <div class="stat-value" id="s-fbl02"><span style="color:var(--text3)">—</span></div>
+      <div class="stat-sub">Drive → Remotion → YouTube</div>
+    </div>
+    <div class="stat-card" style="--accent: var(--orange);">
+      <div class="stat-label">Remotion API</div>
+      <div class="stat-value" id="s-remotion"><span style="color:var(--text3)">—</span></div>
+      <div class="stat-sub">212.85.22.227:3001</div>
+    </div>
+    <div class="stat-card" style="--accent: var(--green);">
+      <div class="stat-label">Última publicação</div>
+      <div class="stat-value" id="s-last" style="font-size:11px;"><span style="color:var(--text3)">—</span></div>
+      <div class="stat-sub" id="s-last-sub">—</div>
+    </div>
+  </div>
+
+  <div class="pipeline-panel">
+    <div class="pipeline-title">Pipeline FBL-02 — status atual</div>
+    <div class="pipeline-steps">
+      <div class="pipeline-step">
+        <div class="step-box pending" id="step-webhook">Webhook</div>
+        <div class="step-arrow"></div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-box pending" id="step-drive">Drive</div>
+        <div class="step-arrow"></div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-box pending" id="step-remotion">Remotion</div>
+        <div class="step-arrow"></div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-box pending" id="step-youtube">YouTube</div>
+        <div class="step-arrow"></div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-box pending" id="step-notion">Notion</div>
+        <div class="step-arrow"></div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-box pending" id="step-slack">Slack</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">FBL-02 — execuções recentes</div>
+        <div class="panel-count" id="count-02">—</div>
+      </div>
+      <div id="list-02"><div class="empty">carregando...</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">FBL-01 — execuções recentes</div>
+        <div class="panel-count" id="count-01">—</div>
+      </div>
+      <div id="list-01"><div class="empty">carregando...</div></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-text" id="last-refreshed">—</div>
+    <div class="footer-slogan">work when the world slows down.</div>
+  </footer>
+
+</div>
+
+<script>
+const N8N = 'https://n8n.expansao-ai.com.br';
+const WF01 = 'F3omvWijmPgVuRwz';
+const WF02 = 'hNqDXSjlBsNfM2cM';
+const REMOTION = 'http://212.85.22.227:3001';
+const INTERVAL = 60;
+
+let countdown = INTERVAL;
+let timer;
+
+function badge(status) {
+  const map = {
+    success: ['success', '✓ sucesso'],
+    error: ['error', '✕ erro'],
+    running: ['running', '⟳ rodando'],
+    waiting: ['waiting', '⧖ aguardando'],
+    active: ['active', '● ativo'],
+    inactive: ['inactive', '○ inativo'],
+    online: ['online', '● online'],
+    offline: ['offline', '✕ offline'],
+  };
+  const [cls, label] = map[status] || ['inactive', status];
+  return `<span class="badge ${cls}"><span class="badge-dot"></span>${label}</span>`;
+}
+
+function fmt(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit', month: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+function dur(start, stop, status) {
+  if (status === 'running' || status === 'waiting') return '...';
+  const ms = new Date(stop) - new Date(start);
+  if (ms < 0) return '—';
+  if (ms < 60000) return Math.round(ms / 1000) + 's';
+  return Math.round(ms / 60000) + 'min';
+}
+
+function renderExecs(execs, listId, countId) {
+  const list = document.getElementById(listId);
+  const count = document.getElementById(countId);
+  if (!execs || execs.length === 0) {
+    list.innerHTML = '<div class="empty">nenhuma execução</div>';
+    count.textContent = '0';
+    return;
+  }
+  count.textContent = execs.length;
+  list.innerHTML = execs.map(e => `
+    <div class="exec-row">
+      <div class="exec-left">
+        ${badge(e.status)}
+        <span class="exec-time">${fmt(e.startedAt)}</span>
+      </div>
+      <span class="exec-duration">${dur(e.startedAt, e.stoppedAt, e.status)}</span>
+    </div>
+  `).join('');
+}
+
+function updatePipelineSteps(lastExec) {
+  const steps = ['step-webhook','step-drive','step-remotion','step-youtube','step-notion','step-slack'];
+  steps.forEach(id => {
+    document.getElementById(id).className = 'step-box pending';
+  });
+  if (!lastExec) return;
+
+  if (lastExec.status === 'success') {
+    steps.forEach(id => document.getElementById(id).className = 'step-box done');
+  } else if (lastExec.status === 'error') {
+    document.getElementById('step-webhook').className = 'step-box done';
+    document.getElementById('step-drive').className = 'step-box done';
+    document.getElementById('step-remotion').className = 'step-box error';
+  } else if (lastExec.status === 'running' || lastExec.status === 'waiting') {
+    document.getElementById('step-webhook').className = 'step-box done';
+    document.getElementById('step-drive').className = 'step-box done';
+    document.getElementById('step-remotion').className = 'step-box running';
+  }
+}
+
+async function get(path) {
+  const r = await fetch(N8N + path);
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+async function refresh() {
+  try {
+    const [wf01, wf02, ex02, ex01] = await Promise.all([
+      get('/api/v1/workflows/' + WF01),
+      get('/api/v1/workflows/' + WF02),
+      get('/api/v1/executions?workflowId=' + WF02 + '&limit=6'),
+      get('/api/v1/executions?workflowId=' + WF01 + '&limit=5'),
+    ]);
+
+    document.getElementById('s-fbl01').innerHTML = badge(wf01.active ? 'active' : 'inactive');
+    document.getElementById('s-fbl02').innerHTML = badge(wf02.active ? 'active' : 'inactive');
+
+    const last02 = ex02.data?.[0];
+    if (last02) {
+      document.getElementById('s-last').innerHTML = badge(last02.status);
+      document.getElementById('s-last-sub').textContent = fmt(last02.startedAt);
+    }
+
+    updatePipelineSteps(last02);
+    renderExecs(ex02.data, 'list-02', 'count-02');
+    renderExecs(ex01.data, 'list-01', 'count-01');
+
+  } catch(e) {
+    console.error('n8n error:', e);
+  }
+
+  try {
+    const r = await fetch(REMOTION + '/health');
+    const d = await r.json();
+    document.getElementById('s-remotion').innerHTML = badge(d.status === 'ok' ? 'online' : 'offline');
+  } catch {
+    document.getElementById('s-remotion').innerHTML = badge('offline');
+  }
+
+  const now = new Date().toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit', month: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+  document.getElementById('last-refreshed').textContent = 'atualizado às ' + now;
+
+  countdown = INTERVAL;
+}
+
+function tick() {
+  countdown--;
+  document.getElementById('next-update').textContent =
+    'próxima atualização em ' + countdown + 's';
+  if (countdown <= 0) refresh();
+}
+
+refresh();
+timer = setInterval(tick, 1000);
+</script>
+</body>
+</html>
