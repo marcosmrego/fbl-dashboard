@@ -17,10 +17,13 @@ const formatDuration = (duration) => {
   return hours ? parts.join(':') : parts.slice(1).join(':');
 };
 
+const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
+
 async function fetchApi(endpoint) {
-  const response = await fetch(endpoint);
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+  const response = await fetch(url);
   if (!response.ok) {
-    throw new Error('Falha ao carregar ' + endpoint);
+    throw new Error('Falha ao carregar ' + url);
   }
   return response.json();
 }
@@ -251,6 +254,11 @@ function renderTopList(listId, items, labelKey) {
 }
 
 function renderHistory(history) {
+  if (typeof Chart === 'undefined') {
+    console.error('Chart.js não foi carregado. Os gráficos não serão renderizados.');
+    return;
+  }
+
   const labels = history.map((item) => new Date(item.collected_at).toLocaleDateString('pt-BR'));
   const subscribersData = history.map((item) => item.subscribers);
   const viewsData = history.map((item) => item.total_views);
@@ -296,11 +304,11 @@ function renderHistory(history) {
 
 async function loadTopVideos() {
   try {
-    const topVideos = await fetchApi('/api/top-videos');
-    renderTopList('topMostViewed', topVideos?.mostViewed ?? [], 'views');
-    renderTopList('topHighestEngagement', topVideos?.highestEngagement ?? [], 'engagement');
-    renderTopList('topMostRecent', topVideos?.mostRecent ?? [], 'recent');
-    renderTopList('topFastestGrowth', topVideos?.fastestGrowth ?? [], 'growth');
+    const topVideos = normalizeTopVideos(await fetchApi('/api/top-videos'));
+    renderTopList('topMostViewed', topVideos.mostViewed, 'views');
+    renderTopList('topHighestEngagement', topVideos.highestEngagement, 'engagement');
+    renderTopList('topMostRecent', topVideos.mostRecent, 'recent');
+    renderTopList('topFastestGrowth', topVideos.fastestGrowth, 'growth');
   } catch (error) {
     console.error('Erro ao carregar top vídeos:', error);
   }
@@ -329,24 +337,54 @@ function showRefreshStatus(message, success) {
   }, 5000);
 }
 
+function normalizeApiData(data) {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    if (Array.isArray(data.value)) return data.value;
+    if (Array.isArray(data.videos)) return data.videos;
+  }
+  return [];
+}
+
+function normalizeTopVideos(data) {
+  if (!data || typeof data !== 'object') return {};
+  return {
+    mostViewed: normalizeApiData(data.mostViewed),
+    highestEngagement: normalizeApiData(data.highestEngagement),
+    mostRecent: normalizeApiData(data.mostRecent),
+    fastestGrowth: normalizeApiData(data.fastestGrowth),
+  };
+}
+
 async function refreshDashboard() {
+  // Primeiro, solicita atualização dos dados do YouTube
   try {
     await fetchApi('/api/refresh-data');
   } catch (error) {
-    console.error('Falha ao solicitar refresh:', error);
+    console.error('Falha ao solicitar refresh dos dados do YouTube:', error);
   }
 
-  const [channel, videos, history] = await Promise.all([
+  // Depois, busca os dados atualizados
+  const [channel, videosResponse, historyResponse] = await Promise.all([
     fetchApi('/api/channel'),
     fetchApi('/api/videos'),
     fetchApi('/api/history'),
   ]);
 
+  const videos = normalizeApiData(videosResponse);
+  const history = normalizeApiData(historyResponse);
   const totalVideoViews = videos.reduce((sum, video) => sum + video.views, 0);
+
   renderOverview(channel, history, totalVideoViews);
   renderVideos(videos);
-  renderHistory(history);
   await loadTopVideos();
+
+  try {
+    renderHistory(history);
+  } catch (error) {
+    console.error('Erro ao renderizar histórico durante refresh:', error);
+  }
+
   updateLastRefreshTime();
 }
 
@@ -399,11 +437,14 @@ async function init() {
     console.error('Erro ao carregar /api/history:', error);
   }
 
-  const totalVideoViews = videos.reduce((sum, video) => sum + video.views, 0);
-  renderOverview(channel, history, totalVideoViews);
-  renderVideos(videos);
-  renderHistory(history);
+  const normalizedVideos = normalizeApiData(videos);
+  const normalizedHistory = normalizeApiData(history);
+  const totalVideoViews = normalizedVideos.reduce((sum, video) => sum + video.views, 0);
+
+  renderOverview(channel, normalizedHistory, totalVideoViews);
+  renderVideos(normalizedVideos);
   await loadTopVideos();
+  renderHistory(normalizedHistory);
 
   setupFilters();
   setupSorting();
@@ -423,4 +464,8 @@ window.addEventListener('beforeunload', () => {
   stopAutoRefresh();
 });
 
-init();
+if (document.readyState === 'complete') {
+  init();
+} else {
+  window.addEventListener('load', init);
+}

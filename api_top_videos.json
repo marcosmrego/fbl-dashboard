@@ -1,0 +1,194 @@
+﻿{
+    "mostViewed":  [
+                       {
+                           "video_id":  "50wsVo-HkXo",
+                           "title":  "Rain on the Seventh Fret | Night Blues",
+                           "thumbnail":  "https://i.ytimg.com/vi/50wsVo-HkXo/mqdefault.jpg",
+                           "video_url":  "https://www.youtube.com/watch?v=50wsVo-HkXo",
+                           "views":  40,
+                           "likes":  2,
+                           "comments":  0,
+                           "duration":  "PT3M5S",
+                           "published_at":  "2026-04-21T22:00:06Z"
+                       },
+                       {
+                           "video_id":  "PtpCvqEq6q8",
+                           "title":  "Midnight Window | Night Drive Blues",
+                           "thumbnail":  "https://i.ytimg.com/vi/PtpCvqEq6q8/mqdefault.jpg",
+                           "video_url":  "https://www.youtube.com/watch?v=PtpCvqEq6q8",
+                           "views":  32,
+                           "likes":  3,
+                           "comments":  1,
+                           "duration":  "PT3M20S",
+                           "published_at":  "2026-04-15T18:26:48Z"
+                       },
+                       {
+                           "video_id":  "mOJMNs28n9U",
+                           "title":  "Neon Confession",
+                           "thumbnail":  "https://i.ytimg.com/vi/mOJMNs28n9U/mqdefault.jpg",
+                           "video_url":  "https://www.youtube.com/watch?v=mOJMNs28n9U",
+                           "views":  31,
+                           "likes":  8,
+                           "comments":  2,
+                           "duration":  "PT5M49S",
+                           "published_at":  "2026-05-10T14:16:41Z"
+                       },
+                       {
+                           "video_id":  "Jhh3M235q-8",
+                           "title":  "Rain on the Overpass | Dark Urban Blues Guitar for Late Night Focus",
+                           "thumbnail":  "https://i.ytimg.com/vi/Jhh3M235q-8/mqdefault.jpg",
+                           "video_url":  "https://www.youtube.com/watch?v=Jhh3M235q-8",
+                           "views":  4,
+                           "likes":  2,
+                           "comments":  0,
+                           "duration":  "PT5M25S",
+                           "published_at":  "2026-05-12T17:39:10Z"
+                       }
+                   ],
+    "highestEngagement":  [
+                              {
+                                  "video_id":  "mOJMNs28n9U",
+                                  "title":  "Neon Confession",
+                                  "thumbnail":  "https://i.ytimg.com/vi/mOJMNs28n9U/mqdefault.jpg",
+                                  "video_url":  "https://www.youtube.com/watch?v=mOJMNs28n9U",
+                                  "views":  31,
+                                  "likes":  8,
+                                  "comments":  2,
+                                  "duration":  "PT5M49S",
+                                  "published_at":  "2026-05-10T14:16:41Z",
+                                  "engagement":  10
+                              },
+                              {
+                                  "video_id":  "PtpCvqEq6q8",
+                                  "title":  "Midnight Window | Night Drive Blues",
+                                  "thumbnail":  "https://i.ytimg.com/vi/PtpCvqEq6q8/mqdefault.jpg",
+                                  "video_url":  "https://www.youtube.com/watch?v=PtpCvqEq6q8",
+                                  "views":  32,
+                                  "likes":  3,
+                                  "comments":  1,
+                                  "duration":  "PT3M20S",
+                                  "published_at":  "2026-04-15T18:26:48Z",
+                                  "engagement":  4
+                              },
+                              {
+                                  "video_id":  "Jhh3M235q-8",
+                                  "title":  "Rain on the Overpass | Dark Urban Blues Guitar for Late Night Focus",
+                                  "thumbnail":  "https://i.ytimg.com/vi/Jhh3M235q-8/mqdefault.jpg",
+                                  "video_url":  "https://www.youtube.com/watch?v=Jhh3M235q-8",
+                                  "views":  4,
+                                  "likes":  2,
+                                  "comments":  0,
+                                  "duration":  "PT5M25S",
+                                  "published_at":  "2026-05-12T17:39:10Z",
+                                  "engagement":  2
+                              },
+                              {
+                                  "video_id":  "50wsVo-HkXo",
+                                  "title":  "Rain on the Seventh Fret | Night Blues",
+                                  "thumbnail":  "https://i.ytimg.com/vi/50wsVo-HkXo/mqdefault.jpg",
+                                  "video_url":  "https://www.youtube.com/watch?v=50wsVo-HkXo",
+                                  "views":  40,
+                                  "likes":  2,
+                                  "comments":  0,
+                                  "duration":  "PT3M5S",
+                                  "published_at":  "2026-04-21T22:00:06Z",
+                                  "engagement":  2
+                              }
+                          ],
+    "mostRecent":  [
+                       {
+                           "video_id":  "Jhh3M235q-8",
+                           "title":  "Rain on the Overpass | Dark Urban Blues Guitar for Late Night Focus",
+                           "thumbnail":  "https://i.ytimg.com/vi/Jhh3M235q-8/mqdefault.jpg",
+                           "video_url":  "https://www.youtube.com/watch?v=Jhh3M235q-8",
+                           "views":  4,
+                           "likes":  2,
+                           "comments":  0,
+                           "duration":  "PT5M25S",
+                           "published_at":  "2026-05-12T17:39:10Z"
+                       },
+                       {
+                           "video_id":  "mOJMNs28n9U",
+                           "title":  "Neon Confession",
+                           "thumbnail":  "https://i.ytimg.com/vi/mOJMNs28n9U/mqdefault.jpg",
+                           "video_url":  "https://www.youtube.com/watch?v=mOJMNs28n9U",
+                           "views":  31,
+                           "likes":  8,
+                           "comments":  2,
+                           "duration":  "PT5M49S",
+                           "published_at":  "2026-05-10T14:16:41Z"
+                       },
+                       {
+                           "video_id":  "50wsVo-HkXo",
+                           "title":  "Rain on the Seventh Fret | Night Blues",
+                           "thumbnail":  "https://i.ytimg.com/vi/50wsVo-HkXo/mqdefault.jpg",
+                           "video_url":  "https://www.youtube.com/watch?v=50wsVo-HkXo",
+                           "views":  40,
+                           "likes":  2,
+                           "comments":  0,
+                           "duration":  "PT3M5S",
+                           "published_at":  "2026-04-21T22:00:06Z"
+                       },
+                       {
+                           "video_id":  "PtpCvqEq6q8",
+                           "title":  "Midnight Window | Night Drive Blues",
+                           "thumbnail":  "https://i.ytimg.com/vi/PtpCvqEq6q8/mqdefault.jpg",
+                           "video_url":  "https://www.youtube.com/watch?v=PtpCvqEq6q8",
+                           "views":  32,
+                           "likes":  3,
+                           "comments":  1,
+                           "duration":  "PT3M20S",
+                           "published_at":  "2026-04-15T18:26:48Z"
+                       }
+                   ],
+    "fastestGrowth":  [
+                          {
+                              "video_id":  "Jhh3M235q-8",
+                              "title":  "Rain on the Overpass | Dark Urban Blues Guitar for Late Night Focus",
+                              "thumbnail":  "https://i.ytimg.com/vi/Jhh3M235q-8/mqdefault.jpg",
+                              "video_url":  "https://www.youtube.com/watch?v=Jhh3M235q-8",
+                              "views":  4,
+                              "likes":  2,
+                              "comments":  0,
+                              "duration":  "PT5M25S",
+                              "published_at":  "2026-05-12T17:39:10Z",
+                              "views_per_day":  27.99825588116399
+                          },
+                          {
+                              "video_id":  "mOJMNs28n9U",
+                              "title":  "Neon Confession",
+                              "thumbnail":  "https://i.ytimg.com/vi/mOJMNs28n9U/mqdefault.jpg",
+                              "video_url":  "https://www.youtube.com/watch?v=mOJMNs28n9U",
+                              "views":  31,
+                              "likes":  8,
+                              "comments":  2,
+                              "duration":  "PT5M49S",
+                              "published_at":  "2026-05-10T14:16:41Z",
+                              "views_per_day":  13.57577348130895
+                          },
+                          {
+                              "video_id":  "50wsVo-HkXo",
+                              "title":  "Rain on the Seventh Fret | Night Blues",
+                              "thumbnail":  "https://i.ytimg.com/vi/50wsVo-HkXo/mqdefault.jpg",
+                              "video_url":  "https://www.youtube.com/watch?v=50wsVo-HkXo",
+                              "views":  40,
+                              "likes":  2,
+                              "comments":  0,
+                              "duration":  "PT3M5S",
+                              "published_at":  "2026-04-21T22:00:06Z",
+                              "views_per_day":  1.9082456035591555
+                          },
+                          {
+                              "video_id":  "PtpCvqEq6q8",
+                              "title":  "Midnight Window | Night Drive Blues",
+                              "thumbnail":  "https://i.ytimg.com/vi/PtpCvqEq6q8/mqdefault.jpg",
+                              "video_url":  "https://www.youtube.com/watch?v=PtpCvqEq6q8",
+                              "views":  32,
+                              "likes":  3,
+                              "comments":  1,
+                              "duration":  "PT3M20S",
+                              "published_at":  "2026-04-15T18:26:48Z",
+                              "views_per_day":  1.1803855043601599
+                          }
+                      ]
+}
