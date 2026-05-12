@@ -1,0 +1,27 @@
+{
+  "name": "focus-blues-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dashboard local para monitoramento do canal Focus Blues Lab no YouTube.",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "start:prod": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "docker:build": "docker build -t focus-blues-dashboard .",
+    "docker:up": "docker compose up -d --build",
+    "pm2:start": "pm2 start ecosystem.config.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "node-cron": "^3.0.2",
+    "sqlite": "^4.1.2",
+    "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

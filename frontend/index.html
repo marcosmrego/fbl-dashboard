@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Focus Blues Lab Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header class="top-bar">
+    <div class="brand">
+      <div class="logo">FBL</div>
+      <div>
+        <h1 id="channelName">Focus Blues Lab</h1>
+        <p id="channelSubtitle">Dashboard de monitoramento do canal</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="last-update-indicator">
+        <span class="update-text">Última atualização: <span id="lastUpdateTime">--:--:--</span></span>
+      </div>
+      <div class="auto-refresh-control">
+        <button id="toggleRefreshBtn" class="refresh-btn active" title="Auto-refresh a cada 5s">
+          <span class="refresh-icon">🔄</span>
+          <span class="refresh-text">Auto</span>
+          <span class="refresh-indicator active" id="refreshIndicator">●</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="cards-grid">
+      <article class="card" id="card-subscribers">
+        <h2>Inscritos</h2>
+        <p class="value">0</p>
+      </article>
+      <article class="card" id="card-views">
+        <h2>Views totais</h2>
+        <p class="value">0</p>
+      </article>
+      <article class="card" id="card-videos">
+        <h2>Vídeos</h2>
+        <p class="value">0</p>
+      </article>
+      <article class="card" id="card-growth">
+        <h2>Crescimento diário</h2>
+        <p class="value">—</p>
+      </article>
+    </section>
+
+    <section class="top-videos">
+      <div class="panel">
+        <h2>Top vídeos</h2>
+        <div class="top-lists">
+          <div class="top-card">
+            <h3>Mais vistos</h3>
+            <ol id="topMostViewed"></ol>
+          </div>
+          <div class="top-card">
+            <h3>Maior engajamento</h3>
+            <ol id="topHighestEngagement"></ol>
+          </div>
+          <div class="top-card">
+            <h3>Mais recentes</h3>
+            <ol id="topMostRecent"></ol>
+          </div>
+          <div class="top-card">
+            <h3>Crescimento rápido</h3>
+            <ol id="topFastestGrowth"></ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="charts">
+      <div class="panel">
+        <h2>Histórico de inscritos</h2>
+        <canvas id="subscribersChart"></canvas>
+      </div>
+      <div class="panel">
+        <h2>Histórico de views</h2>
+        <canvas id="viewsChart"></canvas>
+      </div>
+    </section>
+
+    <section class="videos-section">
+      <div class="videos-header">
+        <h2>Lista de vídeos</h2>
+        <div class="filters">
+          <input type="text" id="searchInput" placeholder="Buscar vídeos..." />
+          <select id="statusFilter">
+            <option value="">Todos os status</option>
+            <option value="Publicado">Publicado</option>
+            <option value="Rascunho">Rascunho</option>
+            <option value="Agendado">Agendado</option>
+          </select>
+        </div>
+      </div>
+      <div class="videos-summary" id="videosSummary">
+        <div class="summary-item">
+          <span class="summary-label">Vídeos mostrados:</span>
+          <span class="summary-value" id="videosCount">0</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Total de views:</span>
+          <span class="summary-value" id="totalViews">0</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Total de likes:</span>
+          <span class="summary-value" id="totalLikes">0</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Média de views:</span>
+          <span class="summary-value" id="avgViews">0</span>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Thumbnail</th>
+              <th>Título</th>
+              <th>Publicado em</th>
+              <th>Views</th>
+              <th>Likes</th>
+              <th>Comentários</th>
+              <th>Duração</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="videosTableBody">
+          </tbody>
+        </table>
+      </div>
+    <section class="pipeline-section">
+      <div class="panel">
+        <div class="pipeline-header">
+          <h2>Pipeline de Produção</h2>
+          <button id="addVideoBtn" class="btn-primary">+ Novo Vídeo</button>
+        </div>
+        <div class="pipeline-board" id="pipelineBoard">
+          <!-- Pipeline será renderizado aqui -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal hidden" id="pipelineModal">
+    <div class="modal-backdrop" id="pipelineBackdrop"></div>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 id="modalTitle">Novo vídeo no pipeline</h3>
+        <button id="closeModalBtn" class="modal-close">✕</button>
+      </div>
+      <form id="pipelineForm" class="modal-form">
+        <label>
+          Título do vídeo
+          <input type="text" id="pipelineTitle" required />
+        </label>
+
+        <label>
+          Status
+          <select id="pipelineStatus">
+            <option value="Ideia">Ideia</option>
+            <option value="Roteiro">Roteiro</option>
+            <option value="Gravação">Gravação</option>
+            <option value="Edição">Edição</option>
+            <option value="Thumbnail">Thumbnail</option>
+            <option value="Publicado">Publicado</option>
+          </select>
+        </label>
+
+        <label>
+          Data de publicação
+          <input type="date" id="pipelinePublishDate" />
+        </label>
+
+        <label>
+          Prioridade
+          <select id="pipelinePriority">
+            <option value="Baixa">Baixa</option>
+            <option value="Média">Média</option>
+            <option value="Alta">Alta</option>
+            <option value="Urgente">Urgente</option>
+          </select>
+        </label>
+
+        <label>
+          Tags (separadas por vírgula)
+          <input type="text" id="pipelineTags" placeholder="ex: blues, guitarra" />
+        </label>
+
+        <label>
+          Duração estimada (minutos)
+          <input type="number" id="pipelineDuration" min="0" />
+        </label>
+
+        <label>
+          Descrição
+          <textarea id="pipelineDescription" rows="4"></textarea>
+        </label>
+
+        <div class="modal-section-row">
+          <label>
+            Roteiro
+            <select id="pipelineScriptStatus">
+              <option value="Pendente">Pendente</option>
+              <option value="Em andamento">Em andamento</option>
+              <option value="Concluído">Concluído</option>
+            </select>
+          </label>
+          <label>
+            Gravação
+            <select id="pipelineRecordingStatus">
+              <option value="Pendente">Pendente</option>
+              <option value="Em andamento">Em andamento</option>
+              <option value="Concluído">Concluído</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="modal-section-row">
+          <label>
+            Edição
+            <select id="pipelineEditingStatus">
+              <option value="Pendente">Pendente</option>
+              <option value="Em andamento">Em andamento</option>
+              <option value="Concluído">Concluído</option>
+            </select>
+          </label>
+          <label>
+            Thumbnail
+            <select id="pipelineThumbnailStatus">
+              <option value="Pendente">Pendente</option>
+              <option value="Em andamento">Em andamento</option>
+              <option value="Concluído">Concluído</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn-primary">Salvar</button>
+          <button type="button" id="deletePipelineBtn" class="btn-secondary hidden">Excluir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    <p>Estrutura inicial do dashboard Focus Blues Lab</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

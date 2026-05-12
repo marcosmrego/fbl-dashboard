@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: focus-blues-dashboard
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./database:/app/database
+      - ./backend/.env:/app/backend/.env:ro
+    environment:
+      - PORT=3000
