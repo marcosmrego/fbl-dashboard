@@ -26,8 +26,14 @@ async function fetchApi(endpoint) {
 }
 
 let autoRefreshInterval = null;
-let isAutoRefreshEnabled = true;
 let lastUpdateTime = new Date();
+const state = {
+  allVideos: [],
+  filteredVideos: [],
+  currentPage: 1,
+  itemsPerPage: 5,
+  currentSort: { column: 'published_at', direction: 'desc' },
+};
 
 function formatGrowth(history) {
   if (!history || history.length < 2) {
@@ -44,15 +50,43 @@ function formatGrowth(history) {
   return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
 }
 
-function renderOverview(data, history) {
+function renderOverview(data, history, totalVideoViews = null) {
   document.getElementById('channelName').textContent = data.channel_name || 'Focus Blues Lab';
   document.getElementById('card-subscribers').querySelector('.value').textContent = formatNumber(data.subscribers);
-  document.getElementById('card-views').querySelector('.value').textContent = formatNumber(data.views);
+  document.getElementById('card-views').querySelector('.value').textContent = formatNumber(
+    totalVideoViews !== null ? totalVideoViews : data.views
+  );
   document.getElementById('card-videos').querySelector('.value').textContent = formatNumber(data.videos);
   document.getElementById('card-growth').querySelector('.value').textContent = formatGrowth(history);
 }
 
+function getSortedVideos(videos) {
+  const { column, direction } = state.currentSort;
+  return [...videos].sort((a, b) => {
+    let aValue = a[column];
+    let bValue = b[column];
+
+    if (column === 'published_at') {
+      aValue = new Date(aValue);
+      bValue = new Date(bValue);
+    } else if (typeof aValue === 'string') {
+      aValue = aValue.toLowerCase();
+      bValue = bValue.toLowerCase();
+    }
+
+    if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+}
+
 function renderVideos(videos) {
+  state.allVideos = videos || [];
+  state.currentPage = 1;
+  applyFiltersAndSorting();
+}
+
+function renderVideoRows(videos) {
   const tbody = document.getElementById('videosTableBody');
   tbody.innerHTML = '';
 
@@ -66,12 +100,10 @@ function renderVideos(videos) {
       <td>${formatNumber(video.likes)}</td>
       <td>${formatNumber(video.comments)}</td>
       <td>${formatDuration(video.duration)}</td>
-      <td>Publicado</td>
+      <td>${video.status || 'Publicado'}</td>
     `;
     tbody.appendChild(tr);
   });
-
-  updateVideosSummary(videos);
 }
 
 function updateVideosSummary(videos) {
@@ -84,6 +116,8 @@ function updateVideosSummary(videos) {
   document.getElementById('totalViews').textContent = formatNumber(totalViews);
   document.getElementById('totalLikes').textContent = formatNumber(totalLikes);
   document.getElementById('avgViews').textContent = formatNumber(avgViews);
+
+  document.getElementById('card-views').querySelector('.value').textContent = formatNumber(totalViews);
 }
 
 function filterVideos(videos, searchTerm, statusFilter) {
@@ -97,78 +131,104 @@ function filterVideos(videos, searchTerm, statusFilter) {
   });
 }
 
-function setupFilters(videos) {
+function setupFilters() {
   const searchInput = document.getElementById('searchInput');
   const statusFilter = document.getElementById('statusFilter');
 
   function applyFilters() {
-    const searchTerm = searchInput.value.trim();
-    const statusValue = statusFilter.value;
-    const filteredVideos = filterVideos(videos, searchTerm, statusValue);
-    renderVideos(filteredVideos);
+    state.currentPage = 1;
+    applyFiltersAndSorting();
   }
 
   searchInput.addEventListener('input', applyFilters);
   statusFilter.addEventListener('change', applyFilters);
 }
 
-function setupSorting(videos) {
+function setupSorting() {
   const tableHeaders = document.querySelectorAll('thead th');
-  let currentSort = { column: 'published_at', direction: 'desc' };
-
-  // Adicionar classes iniciais
-  tableHeaders.forEach((header, index) => {
-    const columns = ['thumbnail', 'title', 'published_at', 'views', 'likes', 'comments', 'duration', 'status'];
-    const column = columns[index];
-
-    if (column && column !== 'thumbnail') {
-      header.classList.add('sortable');
-    }
-  });
+  const columns = ['thumbnail', 'title', 'published_at', 'views', 'likes', 'comments', 'duration', 'status'];
 
   tableHeaders.forEach((header, index) => {
-    const columns = ['thumbnail', 'title', 'published_at', 'views', 'likes', 'comments', 'duration', 'status'];
     const column = columns[index];
-
     if (!column || column === 'thumbnail') return;
 
+    header.classList.add('sortable');
     header.addEventListener('click', () => {
-      // Remover classes de ordenação de todos os cabeçalhos
-      tableHeaders.forEach(h => {
-        h.classList.remove('sort-asc', 'sort-desc');
-      });
-
-      if (currentSort.column === column) {
-        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+      if (state.currentSort.column === column) {
+        state.currentSort.direction = state.currentSort.direction === 'asc' ? 'desc' : 'asc';
       } else {
-        currentSort.column = column;
-        currentSort.direction = 'desc';
+        state.currentSort.column = column;
+        state.currentSort.direction = 'desc';
       }
 
-      // Adicionar classe ao cabeçalho atual
-      header.classList.add(`sort-${currentSort.direction}`);
-
-      const sortedVideos = [...videos].sort((a, b) => {
-        let aValue = a[column];
-        let bValue = b[column];
-
-        if (column === 'published_at') {
-          aValue = new Date(aValue);
-          bValue = new Date(bValue);
-        } else if (typeof aValue === 'string') {
-          aValue = aValue.toLowerCase();
-          bValue = bValue.toLowerCase();
-        }
-
-        if (aValue < bValue) return currentSort.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return currentSort.direction === 'asc' ? 1 : -1;
-        return 0;
+      tableHeaders.forEach((h) => {
+        h.classList.remove('sort-asc', 'sort-desc');
       });
+      header.classList.add(`sort-${state.currentSort.direction}`);
 
-      renderVideos(sortedVideos);
-      setupFilters(sortedVideos);
+      state.currentPage = 1;
+      renderVideoPage();
     });
   });
+}
+
+function getPaginatedVideos(videos) {
+  const start = (state.currentPage - 1) * state.itemsPerPage;
+  return videos.slice(start, start + state.itemsPerPage);
+}
+
+function renderPagination(totalItems) {
+  let paginationContainer = document.getElementById('paginationControls');
+  if (!paginationContainer) {
+    paginationContainer = document.createElement('div');
+    paginationContainer.id = 'paginationControls';
+    paginationContainer.className = 'pagination';
+    const tableWrapper = document.querySelector('.table-wrapper');
+    if (tableWrapper) tableWrapper.appendChild(paginationContainer);
+  }
+
+  paginationContainer.innerHTML = '';
+  const pageCount = Math.ceil(totalItems / state.itemsPerPage);
+  if (pageCount <= 1) return;
+
+  const addButton = (text, page, disabled = false, active = false) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = text;
+    button.disabled = disabled;
+    if (active) button.classList.add('active');
+    if (!disabled) {
+      button.addEventListener('click', () => {
+        state.currentPage = page;
+        renderVideoPage();
+      });
+    }
+    paginationContainer.appendChild(button);
+  };
+
+  addButton('«', 1, state.currentPage === 1);
+  for (let page = 1; page <= pageCount; page += 1) {
+    addButton(String(page), page, false, state.currentPage === page);
+  }
+  addButton('»', pageCount, state.currentPage === pageCount);
+}
+
+function renderVideoPage() {
+  const sortedVideos = getSortedVideos(state.filteredVideos);
+  const pageVideos = getPaginatedVideos(sortedVideos);
+  renderVideoRows(pageVideos);
+  renderPagination(sortedVideos.length);
+}
+
+function applyFiltersAndSorting() {
+  const searchInput = document.getElementById('searchInput');
+  const statusFilter = document.getElementById('statusFilter');
+  const searchTerm = searchInput ? searchInput.value.trim() : '';
+  const statusValue = statusFilter ? statusFilter.value : '';
+
+  state.filteredVideos = filterVideos(state.allVideos, searchTerm, statusValue);
+  updateVideosSummary(state.filteredVideos);
+  renderVideoPage();
 }
 
 function renderTopList(listId, items, labelKey) {
@@ -223,8 +283,15 @@ function renderHistory(history) {
     });
   };
 
-  createChart(document.getElementById('subscribersChart'), 'Inscritos', subscribersData, '#5f8fff');
-  createChart(document.getElementById('viewsChart'), 'Views', viewsData, '#ff9f43');
+  if (window.subscribersChart) {
+    window.subscribersChart.destroy();
+  }
+  if (window.viewsChart) {
+    window.viewsChart.destroy();
+  }
+
+  window.subscribersChart = createChart(document.getElementById('subscribersChart'), 'Inscritos', subscribersData, '#5f8fff');
+  window.viewsChart = createChart(document.getElementById('viewsChart'), 'Views', viewsData, '#ff9f43');
 }
 
 async function loadTopVideos() {
@@ -262,46 +329,25 @@ function showRefreshStatus(message, success) {
   }, 5000);
 }
 
-async function manualRefresh() {
-  const btn = document.getElementById('manualRefreshBtn');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<span class="refresh-icon">⟳</span><span class="refresh-text">Atualizando...</span>';
-  }
-
-  showRefreshStatus('Atualizando dados...', true);
-
+async function refreshDashboard() {
   try {
     await fetchApi('/api/refresh-data');
-
-    const [channel, videos, history] = await Promise.all([
-      fetchApi('/api/channel'),
-      fetchApi('/api/videos'),
-      fetchApi('/api/history'),
-    ]);
-
-    renderOverview(channel, history);
-    renderVideos(videos);
-    renderHistory(history);
-    await loadTopVideos();
-    updateLastRefreshTime();
-
-    showRefreshStatus('Dados atualizados com sucesso.', true);
   } catch (error) {
-    console.error('Erro ao atualizar dados manualmente:', error);
-    showRefreshStatus('Falha ao atualizar dados.', false);
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<span class="refresh-icon">⟳</span><span class="refresh-text">Atualizar</span>';
-    }
+    console.error('Falha ao solicitar refresh:', error);
   }
-}
 
-function addManualRefreshControl() {
-  const btn = document.getElementById('manualRefreshBtn');
-  if (!btn) return;
-  btn.addEventListener('click', manualRefresh);
+  const [channel, videos, history] = await Promise.all([
+    fetchApi('/api/channel'),
+    fetchApi('/api/videos'),
+    fetchApi('/api/history'),
+  ]);
+
+  const totalVideoViews = videos.reduce((sum, video) => sum + video.views, 0);
+  renderOverview(channel, history, totalVideoViews);
+  renderVideos(videos);
+  renderHistory(history);
+  await loadTopVideos();
+  updateLastRefreshTime();
 }
 
 function startAutoRefresh() {
@@ -310,34 +356,13 @@ function startAutoRefresh() {
   }
 
   autoRefreshInterval = setInterval(async () => {
-    if (!isAutoRefreshEnabled) return;
-
     try {
-      console.log('Auto-refreshing dashboard...');
-
-      const results = await Promise.allSettled([
-        fetchApi('/api/channel'),
-        fetchApi('/api/history'),
-      ]);
-
-      const channelResult = results[0];
-      const historyResult = results[1];
-
-      if (channelResult.status === 'fulfilled') {
-        renderOverview(channelResult.value, historyResult.status === 'fulfilled' ? historyResult.value : []);
-      }
-
-      if (historyResult.status === 'fulfilled') {
-        renderHistory(historyResult.value);
-      }
-
-      updateLastRefreshTime();
-      console.log('Dashboard updated successfully');
+      await refreshDashboard();
+      console.log('Dashboard atualizado automaticamente');
     } catch (error) {
-      console.error('Auto-refresh failed:', error);
-      // Não mostrar erro para o usuário em auto-refresh para não incomodar
+      console.error('Falha no auto-refresh:', error);
     }
-  }, 5000); // 5 segundos
+  }, 5000);
 }
 
 function stopAutoRefresh() {
@@ -345,33 +370,6 @@ function stopAutoRefresh() {
     clearInterval(autoRefreshInterval);
     autoRefreshInterval = null;
   }
-}
-
-function toggleAutoRefresh() {
-  isAutoRefreshEnabled = !isAutoRefreshEnabled;
-  const status = isAutoRefreshEnabled ? 'habilitado' : 'desabilitado';
-  console.log(`Auto-refresh ${status}`);
-}
-
-// Adicionar controle visual do auto-refresh
-function addAutoRefreshControl() {
-  const btn = document.getElementById('toggleRefreshBtn');
-  const indicator = document.getElementById('refreshIndicator');
-
-  btn.addEventListener('click', () => {
-    btn.classList.toggle('active');
-    toggleAutoRefresh();
-
-    if (isAutoRefreshEnabled) {
-      btn.title = 'Auto-refresh a cada 5s (ativo)';
-      indicator.textContent = '●';
-      indicator.className = 'refresh-indicator active';
-    } else {
-      btn.title = 'Auto-refresh pausado';
-      indicator.textContent = '○';
-      indicator.className = 'refresh-indicator inactive';
-    }
-  });
 }
 
 async function init() {
@@ -401,17 +399,15 @@ async function init() {
     console.error('Erro ao carregar /api/history:', error);
   }
 
-  renderOverview(channel, history);
+  const totalVideoViews = videos.reduce((sum, video) => sum + video.views, 0);
+  renderOverview(channel, history, totalVideoViews);
   renderVideos(videos);
   renderHistory(history);
   await loadTopVideos();
 
-  setupFilters(videos);
-  setupSorting(videos);
+  setupFilters();
+  setupSorting();
 
-  // Iniciar auto-refresh e refresh manual
-  addAutoRefreshControl();
-  addManualRefreshControl();
   startAutoRefresh();
   updateLastRefreshTime();
 

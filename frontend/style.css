@@ -5,8 +5,8 @@
 }
 
 :root {
-  --bg: #0b1421;
-  --panel: #111b2d;
+  --bg: #000000;
+  --panel: #09101a;
   --text: #e8eef5;
   --muted: #8aa3bf;
   --accent: #4e7cff;
@@ -17,7 +17,7 @@
 body {
   min-height: 100vh;
   font-family: Inter, system-ui, sans-serif;
-  background: radial-gradient(circle at top, #18254c 0%, #081221 65%);
+  background: #000000;
   color: var(--text);
 }
 
@@ -271,6 +271,39 @@ main {
 
 .table-wrapper {
   overflow-x: auto;
+}
+
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.pagination button {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.pagination button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.pagination button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.pagination button:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 table {
