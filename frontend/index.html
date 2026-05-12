@@ -20,12 +20,19 @@
       <div class="last-update-indicator">
         <span class="update-text">Última atualização: <span id="lastUpdateTime">--:--:--</span></span>
       </div>
-      <div class="auto-refresh-control">
-        <button id="toggleRefreshBtn" class="refresh-btn active" title="Auto-refresh a cada 5s">
-          <span class="refresh-icon">🔄</span>
-          <span class="refresh-text">Auto</span>
-          <span class="refresh-indicator active" id="refreshIndicator">●</span>
-        </button>
+      <div class="refresh-panel">
+        <div class="auto-refresh-control">
+          <button id="toggleRefreshBtn" class="refresh-btn active" title="Auto-refresh a cada 5s">
+            <span class="refresh-icon">🔄</span>
+            <span class="refresh-text">Auto</span>
+            <span class="refresh-indicator active" id="refreshIndicator">●</span>
+          </button>
+          <button id="manualRefreshBtn" class="refresh-btn" title="Atualizar agora">
+            <span class="refresh-icon">⟳</span>
+            <span class="refresh-text">Atualizar</span>
+          </button>
+        </div>
+        <div id="refreshStatus" class="status-message hidden"></div>
       </div>
     </div>
   </header>
@@ -134,119 +141,7 @@
           </tbody>
         </table>
       </div>
-    <section class="pipeline-section">
-      <div class="panel">
-        <div class="pipeline-header">
-          <h2>Pipeline de Produção</h2>
-          <button id="addVideoBtn" class="btn-primary">+ Novo Vídeo</button>
-        </div>
-        <div class="pipeline-board" id="pipelineBoard">
-          <!-- Pipeline será renderizado aqui -->
-        </div>
-      </div>
-    </section>
   </main>
-
-  <div class="modal hidden" id="pipelineModal">
-    <div class="modal-backdrop" id="pipelineBackdrop"></div>
-    <div class="modal-panel">
-      <div class="modal-header">
-        <h3 id="modalTitle">Novo vídeo no pipeline</h3>
-        <button id="closeModalBtn" class="modal-close">✕</button>
-      </div>
-      <form id="pipelineForm" class="modal-form">
-        <label>
-          Título do vídeo
-          <input type="text" id="pipelineTitle" required />
-        </label>
-
-        <label>
-          Status
-          <select id="pipelineStatus">
-            <option value="Ideia">Ideia</option>
-            <option value="Roteiro">Roteiro</option>
-            <option value="Gravação">Gravação</option>
-            <option value="Edição">Edição</option>
-            <option value="Thumbnail">Thumbnail</option>
-            <option value="Publicado">Publicado</option>
-          </select>
-        </label>
-
-        <label>
-          Data de publicação
-          <input type="date" id="pipelinePublishDate" />
-        </label>
-
-        <label>
-          Prioridade
-          <select id="pipelinePriority">
-            <option value="Baixa">Baixa</option>
-            <option value="Média">Média</option>
-            <option value="Alta">Alta</option>
-            <option value="Urgente">Urgente</option>
-          </select>
-        </label>
-
-        <label>
-          Tags (separadas por vírgula)
-          <input type="text" id="pipelineTags" placeholder="ex: blues, guitarra" />
-        </label>
-
-        <label>
-          Duração estimada (minutos)
-          <input type="number" id="pipelineDuration" min="0" />
-        </label>
-
-        <label>
-          Descrição
-          <textarea id="pipelineDescription" rows="4"></textarea>
-        </label>
-
-        <div class="modal-section-row">
-          <label>
-            Roteiro
-            <select id="pipelineScriptStatus">
-              <option value="Pendente">Pendente</option>
-              <option value="Em andamento">Em andamento</option>
-              <option value="Concluído">Concluído</option>
-            </select>
-          </label>
-          <label>
-            Gravação
-            <select id="pipelineRecordingStatus">
-              <option value="Pendente">Pendente</option>
-              <option value="Em andamento">Em andamento</option>
-              <option value="Concluído">Concluído</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="modal-section-row">
-          <label>
-            Edição
-            <select id="pipelineEditingStatus">
-              <option value="Pendente">Pendente</option>
-              <option value="Em andamento">Em andamento</option>
-              <option value="Concluído">Concluído</option>
-            </select>
-          </label>
-          <label>
-            Thumbnail
-            <select id="pipelineThumbnailStatus">
-              <option value="Pendente">Pendente</option>
-              <option value="Em andamento">Em andamento</option>
-              <option value="Concluído">Concluído</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="modal-actions">
-          <button type="submit" class="btn-primary">Salvar</button>
-          <button type="button" id="deletePipelineBtn" class="btn-secondary hidden">Excluir</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <footer>
     <p>Estrutura inicial do dashboard Focus Blues Lab</p>

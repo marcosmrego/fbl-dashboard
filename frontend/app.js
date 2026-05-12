@@ -248,6 +248,62 @@ function updateLastRefreshTime() {
   }
 }
 
+function showRefreshStatus(message, success) {
+  const statusEl = document.getElementById('refreshStatus');
+  if (!statusEl) return;
+
+  statusEl.textContent = message;
+  statusEl.className = `status-message ${success ? 'success' : 'error'}`;
+
+  clearTimeout(window.refreshStatusTimeout);
+  window.refreshStatusTimeout = setTimeout(() => {
+    statusEl.textContent = '';
+    statusEl.className = 'status-message hidden';
+  }, 5000);
+}
+
+async function manualRefresh() {
+  const btn = document.getElementById('manualRefreshBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="refresh-icon">⟳</span><span class="refresh-text">Atualizando...</span>';
+  }
+
+  showRefreshStatus('Atualizando dados...', true);
+
+  try {
+    await fetchApi('/api/refresh-data');
+
+    const [channel, videos, history] = await Promise.all([
+      fetchApi('/api/channel'),
+      fetchApi('/api/videos'),
+      fetchApi('/api/history'),
+    ]);
+
+    renderOverview(channel, history);
+    renderVideos(videos);
+    renderHistory(history);
+    await loadTopVideos();
+    updateLastRefreshTime();
+
+    showRefreshStatus('Dados atualizados com sucesso.', true);
+  } catch (error) {
+    console.error('Erro ao atualizar dados manualmente:', error);
+    showRefreshStatus('Falha ao atualizar dados.', false);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="refresh-icon">⟳</span><span class="refresh-text">Atualizar</span>';
+    }
+  }
+}
+
+function addManualRefreshControl() {
+  const btn = document.getElementById('manualRefreshBtn');
+  if (!btn) return;
+  btn.addEventListener('click', manualRefresh);
+}
+
 function startAutoRefresh() {
   if (autoRefreshInterval) {
     clearInterval(autoRefreshInterval);
@@ -353,12 +409,13 @@ async function init() {
   setupFilters(videos);
   setupSorting(videos);
 
-  // Iniciar auto-refresh
-    addAutoRefreshControl();
-    startAutoRefresh();
-    updateLastRefreshTime();
+  // Iniciar auto-refresh e refresh manual
+  addAutoRefreshControl();
+  addManualRefreshControl();
+  startAutoRefresh();
+  updateLastRefreshTime();
 
-    console.log('Dashboard inicializado com auto-refresh a cada 5 segundos');
+  console.log('Dashboard inicializado com auto-refresh a cada 5 segundos');
 
   if (!loadedSomething) {
     document.body.insertAdjacentHTML('afterbegin', '<div class="alert">Não foi possível carregar os dados. Verifique o servidor.</div>');

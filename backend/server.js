@@ -56,6 +56,16 @@ app.get('/api/top-videos', async (req, res) => {
   }
 });
 
+app.get('/api/refresh-data', async (req, res) => {
+  try {
+    await scheduler.refreshData();
+    res.json({ success: true, message: 'Coleta de dados iniciada com sucesso' });
+  } catch (error) {
+    console.error('GET /api/refresh-data failed', error);
+    res.status(500).json({ error: 'Erro ao disparar coleta de dados' });
+  }
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
 });
