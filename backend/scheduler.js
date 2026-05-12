@@ -46,8 +46,15 @@ async function refreshData() {
 }
 
 function start() {
+  // Executar a cada 6 horas
   cron.schedule('0 */6 * * *', () => {
     console.log('Executando coleta agendada de dados do YouTube...');
+    refreshData();
+  });
+  
+  // Também executar diariamente a meia-noite para garantir coleta diária
+  cron.schedule('0 0 * * *', () => {
+    console.log('Executando coleta diária à meia-noite...');
     refreshData();
   });
 }
