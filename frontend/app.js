@@ -63,8 +63,10 @@ function getSortedVideos(videos) {
 }
 
 function renderVideos(videos) {
+  const prev = state.allVideos.length;
   state.allVideos = videos || [];
-  state.currentPage = 1;
+  // só reseta paginação se a quantidade de vídeos mudou
+  if (prev !== state.allVideos.length) state.currentPage = 1;
   applyFiltersAndSorting();
 }
 
@@ -206,43 +208,35 @@ function renderTopList(listId, items, labelFn) {
 let subscribersChart = null;
 let viewsChart = null;
 
-function renderHistory(history) {
-  if (typeof Chart === 'undefined' || !history.length) return;
-
-  const labels = history.map((r) => new Date(r.collected_at).toLocaleDateString('pt-BR'));
-  const subData = history.map((r) => r.subscribers);
-  const viewData = history.map((r) => r.total_views);
-
-  const defaults = {
-    type: 'line',
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      interaction: { mode: 'index', intersect: false },
-      scales: {
-        x: {
-          ticks: { color: '#6b8cba', maxRotation: 30 },
-          grid: { color: 'rgba(255,255,255,0.04)' },
-        },
-        y: {
-          ticks: { color: '#6b8cba' },
-          grid: { color: 'rgba(255,255,255,0.04)' },
-        },
-      },
-      plugins: {
-        legend: { labels: { color: '#c5d8f5', font: { size: 12 } } },
-        tooltip: {
-          backgroundColor: 'rgba(10,20,40,0.95)',
-          titleColor: '#c5d8f5',
-          bodyColor: '#8aaad4',
-          borderColor: 'rgba(255,255,255,0.1)',
-          borderWidth: 1,
-        },
-      },
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: true,
+  interaction: { mode: 'index', intersect: false },
+  animation: { duration: 400 },
+  scales: {
+    x: {
+      ticks: { color: '#6b8cba', maxRotation: 30 },
+      grid: { color: 'rgba(255,255,255,0.04)' },
     },
-  };
+    y: {
+      ticks: { color: '#6b8cba' },
+      grid: { color: 'rgba(255,255,255,0.04)' },
+    },
+  },
+  plugins: {
+    legend: { labels: { color: '#c5d8f5', font: { size: 12 } } },
+    tooltip: {
+      backgroundColor: 'rgba(10,20,40,0.95)',
+      titleColor: '#c5d8f5',
+      bodyColor: '#8aaad4',
+      borderColor: 'rgba(255,255,255,0.1)',
+      borderWidth: 1,
+    },
+  },
+};
 
-  const buildDataset = (label, data, color) => ({
+function buildDataset(label, data, color) {
+  return {
     label,
     data,
     borderColor: color,
@@ -251,20 +245,40 @@ function renderHistory(history) {
     fill: true,
     pointRadius: 3,
     pointHoverRadius: 6,
-  });
+  };
+}
 
-  if (subscribersChart) subscribersChart.destroy();
-  if (viewsChart) viewsChart.destroy();
+function renderHistory(history) {
+  if (typeof Chart === 'undefined' || !history.length) return;
 
-  subscribersChart = new Chart(document.getElementById('subscribersChart'), {
-    ...defaults,
-    data: { labels, datasets: [buildDataset('Inscritos', subData, '#5f8fff')] },
-  });
+  const labels = history.map((r) => new Date(r.collected_at).toLocaleDateString('pt-BR'));
+  const subData = history.map((r) => r.subscribers);
+  const viewData = history.map((r) => r.total_views);
 
-  viewsChart = new Chart(document.getElementById('viewsChart'), {
-    ...defaults,
-    data: { labels, datasets: [buildDataset('Views', viewData, '#ff9f43')] },
-  });
+  if (subscribersChart) {
+    // atualiza dados sem recriar o gráfico
+    subscribersChart.data.labels = labels;
+    subscribersChart.data.datasets[0].data = subData;
+    subscribersChart.update('none'); // 'none' pula a animação para não conflitar com o timer
+  } else {
+    subscribersChart = new Chart(document.getElementById('subscribersChart'), {
+      type: 'line',
+      data: { labels, datasets: [buildDataset('Inscritos', subData, '#5f8fff')] },
+      options: chartOptions,
+    });
+  }
+
+  if (viewsChart) {
+    viewsChart.data.labels = labels;
+    viewsChart.data.datasets[0].data = viewData;
+    viewsChart.update('none');
+  } else {
+    viewsChart = new Chart(document.getElementById('viewsChart'), {
+      type: 'line',
+      data: { labels, datasets: [buildDataset('Views', viewData, '#ff9f43')] },
+      options: chartOptions,
+    });
+  }
 }
 
 function updateLastRefreshTime() {
@@ -309,7 +323,12 @@ async function refreshDashboard() {
   renderTopList('topMostRecent', topVideos.mostRecent, (v) => new Date(v.published_at).toLocaleDateString('pt-BR'));
   renderTopList('topFastestGrowth', topVideos.fastestGrowth, (v) => `${formatNumber(Math.round(v.views_per_day || 0))} views/dia`);
 
-  renderHistory(history);
+  try {
+    renderHistory(history);
+  } catch (err) {
+    console.error('Erro ao renderizar gráficos:', err);
+  }
+
   updateLastRefreshTime();
 }
 
@@ -333,4 +352,8 @@ async function init() {
   }, 10000);
 }
 
-window.addEventListener('load', init);
+if (document.readyState === 'complete') {
+  init();
+} else {
+  window.addEventListener('load', init);
+}
