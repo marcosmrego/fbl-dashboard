@@ -3,109 +3,135 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Focus Blues Lab Dashboard</title>
+  <title>Focus Blues Lab · Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <header class="top-bar">
     <div class="brand">
-      <img src="/images/Focus Blues Lab.png" alt="Focus Blues Lab Logo" class="logo" />
-      <div>
+      <img src="/images/Focus Blues Lab.png" alt="Focus Blues Lab Logo" class="logo" onerror="this.style.display='none'" />
+      <div class="brand-text">
         <h1 id="channelName">Focus Blues Lab</h1>
-        <p id="channelSubtitle">Dashboard de monitoramento do canal</p>
+        <p class="brand-sub">Dashboard de monitoramento do canal</p>
       </div>
     </div>
-    <div class="header-controls">
-      <div class="last-update-indicator">
-        <span class="update-text">Última atualização: <span id="lastUpdateTime">--:--:--</span></span>
+    <div class="header-right">
+      <div class="live-badge">
+        <span class="live-dot"></span>
+        Ao vivo
+      </div>
+      <div class="last-update">
+        Atualizado às <span id="lastUpdateTime">--:--:--</span>
       </div>
     </div>
   </header>
 
   <main>
     <section class="cards-grid">
-      <article class="card" id="card-subscribers">
-        <h2>Inscritos</h2>
-        <p class="value">0</p>
+      <article class="card card--blue">
+        <div class="card-icon">👥</div>
+        <div class="card-body">
+          <h2>Inscritos</h2>
+          <p class="value" id="val-subscribers">0</p>
+        </div>
       </article>
-      <article class="card" id="card-views">
-        <h2>Views totais</h2>
-        <p class="value">0</p>
+      <article class="card card--orange">
+        <div class="card-icon">▶️</div>
+        <div class="card-body">
+          <h2>Views totais</h2>
+          <p class="value" id="val-views">0</p>
+        </div>
       </article>
-      <article class="card" id="card-videos">
-        <h2>Vídeos</h2>
-        <p class="value">0</p>
+      <article class="card card--purple">
+        <div class="card-icon">🎬</div>
+        <div class="card-body">
+          <h2>Vídeos</h2>
+          <p class="value" id="val-videos">0</p>
+        </div>
       </article>
-      <article class="card" id="card-growth">
-        <h2>Crescimento diário</h2>
-        <p class="value">—</p>
+      <article class="card card--green">
+        <div class="card-icon">📈</div>
+        <div class="card-body">
+          <h2>Crescimento</h2>
+          <p class="value" id="val-growth">—</p>
+        </div>
       </article>
+    </section>
+
+    <section class="charts">
+      <div class="panel">
+        <h2>Inscritos ao longo do tempo</h2>
+        <canvas id="subscribersChart"></canvas>
+      </div>
+      <div class="panel">
+        <h2>Views ao longo do tempo</h2>
+        <canvas id="viewsChart"></canvas>
+      </div>
     </section>
 
     <section class="top-videos">
       <div class="panel">
-        <h2>Top vídeos</h2>
+        <h2>Rankings</h2>
         <div class="top-lists">
           <div class="top-card">
-            <h3>Mais vistos</h3>
+            <div class="top-card-header">
+              <span class="top-card-icon">🏆</span>
+              <h3>Mais vistos</h3>
+            </div>
             <ol id="topMostViewed"></ol>
           </div>
           <div class="top-card">
-            <h3>Maior engajamento</h3>
+            <div class="top-card-header">
+              <span class="top-card-icon">❤️</span>
+              <h3>Maior engajamento</h3>
+            </div>
             <ol id="topHighestEngagement"></ol>
           </div>
           <div class="top-card">
-            <h3>Mais recentes</h3>
+            <div class="top-card-header">
+              <span class="top-card-icon">🆕</span>
+              <h3>Mais recentes</h3>
+            </div>
             <ol id="topMostRecent"></ol>
           </div>
           <div class="top-card">
-            <h3>Crescimento rápido</h3>
+            <div class="top-card-header">
+              <span class="top-card-icon">🚀</span>
+              <h3>Crescimento rápido</h3>
+            </div>
             <ol id="topFastestGrowth"></ol>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="charts">
-      <div class="panel">
-        <h2>Histórico de inscritos</h2>
-        <canvas id="subscribersChart"></canvas>
-      </div>
-      <div class="panel">
-        <h2>Histórico de views</h2>
-        <canvas id="viewsChart"></canvas>
-      </div>
-    </section>
-
-    <section class="videos-section">
+    <section class="videos-section panel">
       <div class="videos-header">
-        <h2>Lista de vídeos</h2>
-        <div class="filters">
-          <input type="text" id="searchInput" placeholder="Buscar vídeos..." />
-          <select id="statusFilter">
-            <option value="">Todos os status</option>
-            <option value="Publicado">Publicado</option>
-            <option value="Rascunho">Rascunho</option>
-            <option value="Agendado">Agendado</option>
-          </select>
+        <h2>Todos os vídeos</h2>
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Buscar vídeos..." autocomplete="off" />
         </div>
       </div>
-      <div class="videos-summary" id="videosSummary">
+      <div class="videos-summary">
         <div class="summary-item">
-          <span class="summary-label">Vídeos mostrados:</span>
+          <span class="summary-label">Vídeos</span>
           <span class="summary-value" id="videosCount">0</span>
         </div>
         <div class="summary-item">
-          <span class="summary-label">Total de views:</span>
+          <span class="summary-label">Total de views</span>
           <span class="summary-value" id="totalViews">0</span>
         </div>
         <div class="summary-item">
-          <span class="summary-label">Total de likes:</span>
+          <span class="summary-label">Total de likes</span>
           <span class="summary-value" id="totalLikes">0</span>
         </div>
         <div class="summary-item">
-          <span class="summary-label">Média de views:</span>
+          <span class="summary-label">Média de views</span>
           <span class="summary-value" id="avgViews">0</span>
         </div>
       </div>
@@ -113,27 +139,25 @@
         <table>
           <thead>
             <tr>
-              <th>Thumbnail</th>
-              <th>Título</th>
-              <th>Publicado em</th>
-              <th>Views</th>
-              <th>Likes</th>
-              <th>Comentários</th>
-              <th>Duração</th>
-              <th>Status</th>
+              <th>Thumb</th>
+              <th data-col="title">Título</th>
+              <th data-col="published_at">Publicado em</th>
+              <th data-col="views">Views</th>
+              <th data-col="likes">Likes</th>
+              <th data-col="comments">Comentários</th>
+              <th data-col="duration">Duração</th>
             </tr>
           </thead>
-          <tbody id="videosTableBody">
-          </tbody>
+          <tbody id="videosTableBody"></tbody>
         </table>
       </div>
-      </section>
+    </section>
   </main>
 
   <footer>
-    <p>Estrutura inicial do dashboard Focus Blues Lab</p>
+    <p>Focus Blues Lab Dashboard · atualiza a cada 10 segundos via banco de dados</p>
   </footer>
 
-  <script src="app.js?v=2"></script>
+  <script src="app.js"></script>
 </body>
 </html>

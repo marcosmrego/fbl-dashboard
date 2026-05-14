@@ -4,57 +4,25 @@ const database = require('./database');
 
 async function refreshData() {
   try {
-    const channelData = await youtube.fetchChannelData();
-    const videosData = await youtube.fetchVideosData();
+    console.log('Coletando dados do YouTube...');
+    const [channelData, videosData] = await Promise.all([
+      youtube.fetchChannelData(),
+      youtube.fetchVideosData(),
+    ]);
 
-    const db = await database.init();
-    await db.run(
-      `INSERT INTO channel_stats (collected_at, channel_name, subscribers, total_views, total_videos) VALUES (?, ?, ?, ?, ?)`,
-      new Date().toISOString(),
-      channelData.channel_name,
-      channelData.subscribers,
-      channelData.views,
-      channelData.videos
-    );
+    await database.saveChannelStats(channelData);
+    await database.saveVideos(videosData);
 
-    const insertVideo = await db.prepare(`
-      INSERT OR REPLACE INTO videos (
-        video_id, title, published_at, views, likes, comments, duration, thumbnail, video_url, collected_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    for (const video of videosData) {
-      await insertVideo.run(
-        video.video_id,
-        video.title,
-        video.published_at,
-        video.views,
-        video.likes,
-        video.comments,
-        video.duration,
-        video.thumbnail,
-        video.video_url,
-        video.collected_at
-      );
-    }
-
-    await insertVideo.finalize();
-    console.log('Atualização automática concluída.');
+    console.log(`Coleta concluída: ${videosData.length} vídeos atualizados.`);
   } catch (error) {
-    console.error('Erro ao atualizar dados do YouTube:', error);
+    console.error('Erro ao atualizar dados do YouTube:', error.message);
   }
 }
 
 function start() {
-  // Executar a cada 6 horas
+  // A cada 6 horas
   cron.schedule('0 */6 * * *', () => {
-    console.log('Executando coleta agendada de dados do YouTube...');
-    refreshData();
-  });
-  
-  // Também executar diariamente a meia-noite para garantir coleta diária
-  cron.schedule('0 0 * * *', () => {
-    console.log('Executando coleta diária à meia-noite...');
+    console.log('Executando coleta agendada (6h)...');
     refreshData();
   });
 }

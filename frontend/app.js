@@ -1,84 +1,63 @@
-const formatNumber = (value) => new Intl.NumberFormat('pt-BR').format(value);
+const formatNumber = (value) => new Intl.NumberFormat('pt-BR').format(value ?? 0);
 
 const formatDuration = (duration) => {
   if (!duration) return '00:00';
   const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!match) return duration;
-
-  const hours = Number(match[1] || 0);
-  const minutes = Number(match[2] || 0);
-  const seconds = Number(match[3] || 0);
+  const h = Number(match[1] || 0);
+  const m = Number(match[2] || 0);
+  const s = Number(match[3] || 0);
   const parts = [];
-
-  if (hours) parts.push(String(hours).padStart(2, '0'));
-  parts.push(String(minutes).padStart(2, '0'));
-  parts.push(String(seconds).padStart(2, '0'));
-
-  return hours ? parts.join(':') : parts.slice(1).join(':');
+  if (h) parts.push(String(h).padStart(2, '0'));
+  parts.push(String(m).padStart(2, '0'));
+  parts.push(String(s).padStart(2, '0'));
+  return parts.join(':');
 };
 
 const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
 
 async function fetchApi(endpoint) {
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+  const url = `${API_BASE}${endpoint}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error('Falha ao carregar ' + url);
-  }
+  if (!response.ok) throw new Error(`Falha ao carregar ${url}`);
   return response.json();
 }
 
-let autoRefreshInterval = null;
-let lastUpdateTime = new Date();
 const state = {
   allVideos: [],
   filteredVideos: [],
   currentPage: 1,
-  itemsPerPage: 5,
+  itemsPerPage: 8,
   currentSort: { column: 'published_at', direction: 'desc' },
 };
 
 function formatGrowth(history) {
-  if (!history || history.length < 2) {
-    return '—';
-  }
-
+  if (!history || history.length < 2) return '—';
   const last = history[history.length - 1].subscribers;
   const previous = history[history.length - 2].subscribers;
-  if (previous === 0) {
-    return '—';
-  }
-
-  const value = ((last - previous) / previous) * 100;
-  return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
+  if (!previous) return '—';
+  const diff = last - previous;
+  const pct = ((diff / previous) * 100).toFixed(1);
+  return `${diff >= 0 ? '+' : ''}${diff} (${pct}%)`;
 }
 
-function renderOverview(data, history, totalVideoViews = null) {
+function renderOverview(data, history) {
   document.getElementById('channelName').textContent = data.channel_name || 'Focus Blues Lab';
-  document.getElementById('card-subscribers').querySelector('.value').textContent = formatNumber(data.subscribers);
-  document.getElementById('card-views').querySelector('.value').textContent = formatNumber(
-    totalVideoViews !== null ? totalVideoViews : data.views
-  );
-  document.getElementById('card-videos').querySelector('.value').textContent = formatNumber(data.videos);
-  document.getElementById('card-growth').querySelector('.value').textContent = formatGrowth(history);
+  document.getElementById('val-subscribers').textContent = formatNumber(data.subscribers);
+  document.getElementById('val-views').textContent = formatNumber(data.views);
+  document.getElementById('val-videos').textContent = formatNumber(data.videos);
+  document.getElementById('val-growth').textContent = formatGrowth(history);
 }
 
 function getSortedVideos(videos) {
   const { column, direction } = state.currentSort;
   return [...videos].sort((a, b) => {
-    let aValue = a[column];
-    let bValue = b[column];
-
-    if (column === 'published_at') {
-      aValue = new Date(aValue);
-      bValue = new Date(bValue);
-    } else if (typeof aValue === 'string') {
-      aValue = aValue.toLowerCase();
-      bValue = bValue.toLowerCase();
-    }
-
-    if (aValue < bValue) return direction === 'asc' ? -1 : 1;
-    if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+    let av = a[column];
+    let bv = b[column];
+    if (column === 'published_at') { av = new Date(av); bv = new Date(bv); }
+    else if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+    if (av < bv) return direction === 'asc' ? -1 : 1;
+    if (av > bv) return direction === 'asc' ? 1 : -1;
     return 0;
   });
 }
@@ -92,380 +71,266 @@ function renderVideos(videos) {
 function renderVideoRows(videos) {
   const tbody = document.getElementById('videosTableBody');
   tbody.innerHTML = '';
-
   videos.forEach((video) => {
     const tr = document.createElement('tr');
+    const date = new Date(video.published_at).toLocaleDateString('pt-BR');
     tr.innerHTML = `
-      <td><img src="${video.thumbnail}" alt="${video.title}" /></td>
-      <td><a href="${video.video_url}" target="_blank">${video.title}</a></td>
-      <td>${new Date(video.published_at).toLocaleDateString('pt-BR')}</td>
-      <td>${formatNumber(video.views)}</td>
-      <td>${formatNumber(video.likes)}</td>
-      <td>${formatNumber(video.comments)}</td>
-      <td>${formatDuration(video.duration)}</td>
-      <td>${video.status || 'Publicado'}</td>
+      <td><a href="${video.video_url}" target="_blank" rel="noopener">
+        <img src="${video.thumbnail}" alt="${video.title}" loading="lazy" />
+      </a></td>
+      <td><a class="video-title-link" href="${video.video_url}" target="_blank" rel="noopener">${video.title}</a></td>
+      <td>${date}</td>
+      <td class="num">${formatNumber(video.views)}</td>
+      <td class="num">${formatNumber(video.likes)}</td>
+      <td class="num">${formatNumber(video.comments)}</td>
+      <td class="num">${formatDuration(video.duration)}</td>
     `;
     tbody.appendChild(tr);
   });
 }
 
 function updateVideosSummary(videos) {
-  const count = videos.length;
-  const totalViews = videos.reduce((sum, video) => sum + video.views, 0);
-  const totalLikes = videos.reduce((sum, video) => sum + video.likes, 0);
-  const avgViews = count > 0 ? Math.round(totalViews / count) : 0;
-
-  document.getElementById('videosCount').textContent = formatNumber(count);
+  const totalViews = videos.reduce((s, v) => s + (v.views || 0), 0);
+  const totalLikes = videos.reduce((s, v) => s + (v.likes || 0), 0);
+  const avgViews = videos.length > 0 ? Math.round(totalViews / videos.length) : 0;
+  document.getElementById('videosCount').textContent = formatNumber(videos.length);
   document.getElementById('totalViews').textContent = formatNumber(totalViews);
   document.getElementById('totalLikes').textContent = formatNumber(totalLikes);
   document.getElementById('avgViews').textContent = formatNumber(avgViews);
-
-  document.getElementById('card-views').querySelector('.value').textContent = formatNumber(totalViews);
 }
 
-function filterVideos(videos, searchTerm, statusFilter) {
-  return videos.filter((video) => {
-    const matchesSearch = !searchTerm ||
-      video.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !statusFilter ||
-      video.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
+function filterVideos(videos, searchTerm) {
+  if (!searchTerm) return videos;
+  const term = searchTerm.toLowerCase();
+  return videos.filter((v) => v.title.toLowerCase().includes(term));
 }
 
 function setupFilters() {
-  const searchInput = document.getElementById('searchInput');
-  const statusFilter = document.getElementById('statusFilter');
-
-  function applyFilters() {
+  document.getElementById('searchInput').addEventListener('input', () => {
     state.currentPage = 1;
     applyFiltersAndSorting();
-  }
-
-  searchInput.addEventListener('input', applyFilters);
-  statusFilter.addEventListener('change', applyFilters);
+  });
 }
 
 function setupSorting() {
-  const tableHeaders = document.querySelectorAll('thead th');
-  const columns = ['thumbnail', 'title', 'published_at', 'views', 'likes', 'comments', 'duration', 'status'];
-
-  tableHeaders.forEach((header, index) => {
-    const column = columns[index];
-    if (!column || column === 'thumbnail') return;
-
+  const headers = document.querySelectorAll('thead th[data-col]');
+  headers.forEach((header) => {
     header.classList.add('sortable');
     header.addEventListener('click', () => {
-      if (state.currentSort.column === column) {
+      const col = header.dataset.col;
+      if (state.currentSort.column === col) {
         state.currentSort.direction = state.currentSort.direction === 'asc' ? 'desc' : 'asc';
       } else {
-        state.currentSort.column = column;
+        state.currentSort.column = col;
         state.currentSort.direction = 'desc';
       }
-
-      tableHeaders.forEach((h) => {
-        h.classList.remove('sort-asc', 'sort-desc');
-      });
+      headers.forEach((h) => h.classList.remove('sort-asc', 'sort-desc'));
       header.classList.add(`sort-${state.currentSort.direction}`);
-
       state.currentPage = 1;
       renderVideoPage();
     });
   });
 }
 
-function getPaginatedVideos(videos) {
-  const start = (state.currentPage - 1) * state.itemsPerPage;
-  return videos.slice(start, start + state.itemsPerPage);
-}
-
 function renderPagination(totalItems) {
-  let paginationContainer = document.getElementById('paginationControls');
-  if (!paginationContainer) {
-    paginationContainer = document.createElement('div');
-    paginationContainer.id = 'paginationControls';
-    paginationContainer.className = 'pagination';
-    const tableWrapper = document.querySelector('.table-wrapper');
-    if (tableWrapper) tableWrapper.appendChild(paginationContainer);
+  let container = document.getElementById('paginationControls');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'paginationControls';
+    container.className = 'pagination';
+    document.querySelector('.table-wrapper').appendChild(container);
   }
-
-  paginationContainer.innerHTML = '';
+  container.innerHTML = '';
   const pageCount = Math.ceil(totalItems / state.itemsPerPage);
   if (pageCount <= 1) return;
 
-  const addButton = (text, page, disabled = false, active = false) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = text;
-    button.disabled = disabled;
-    if (active) button.classList.add('active');
-    if (!disabled) {
-      button.addEventListener('click', () => {
-        state.currentPage = page;
-        renderVideoPage();
-      });
-    }
-    paginationContainer.appendChild(button);
+  const btn = (text, page, disabled, active) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = text;
+    b.disabled = disabled;
+    if (active) b.classList.add('active');
+    if (!disabled) b.addEventListener('click', () => { state.currentPage = page; renderVideoPage(); });
+    container.appendChild(b);
   };
 
-  addButton('«', 1, state.currentPage === 1);
-  for (let page = 1; page <= pageCount; page += 1) {
-    addButton(String(page), page, false, state.currentPage === page);
+  btn('«', 1, state.currentPage === 1, false);
+  btn('‹', state.currentPage - 1, state.currentPage === 1, false);
+
+  const range = 2;
+  for (let p = 1; p <= pageCount; p++) {
+    if (p === 1 || p === pageCount || (p >= state.currentPage - range && p <= state.currentPage + range)) {
+      btn(String(p), p, false, state.currentPage === p);
+    } else if (p === state.currentPage - range - 1 || p === state.currentPage + range + 1) {
+      const dots = document.createElement('span');
+      dots.textContent = '…';
+      dots.className = 'pagination-dots';
+      container.appendChild(dots);
+    }
   }
-  addButton('»', pageCount, state.currentPage === pageCount);
+
+  btn('›', state.currentPage + 1, state.currentPage === pageCount, false);
+  btn('»', pageCount, state.currentPage === pageCount, false);
 }
 
 function renderVideoPage() {
-  const sortedVideos = getSortedVideos(state.filteredVideos);
-  const pageVideos = getPaginatedVideos(sortedVideos);
-  renderVideoRows(pageVideos);
-  renderPagination(sortedVideos.length);
+  const sorted = getSortedVideos(state.filteredVideos);
+  const start = (state.currentPage - 1) * state.itemsPerPage;
+  renderVideoRows(sorted.slice(start, start + state.itemsPerPage));
+  renderPagination(sorted.length);
 }
 
 function applyFiltersAndSorting() {
-  const searchInput = document.getElementById('searchInput');
-  const statusFilter = document.getElementById('statusFilter');
-  const searchTerm = searchInput ? searchInput.value.trim() : '';
-  const statusValue = statusFilter ? statusFilter.value : '';
-
-  state.filteredVideos = filterVideos(state.allVideos, searchTerm, statusValue);
+  const term = document.getElementById('searchInput')?.value.trim() || '';
+  state.filteredVideos = filterVideos(state.allVideos, term);
   updateVideosSummary(state.filteredVideos);
   renderVideoPage();
 }
 
-function renderTopList(listId, items, labelKey) {
+function renderTopList(listId, items, labelFn) {
   const list = document.getElementById(listId);
   list.innerHTML = '';
-
-  items.forEach((item) => {
+  items.forEach((item, i) => {
     const li = document.createElement('li');
-    const labelValue = labelKey === 'views'
-      ? `${formatNumber(item.views)} views`
-      : labelKey === 'engagement'
-        ? `${formatNumber(item.likes + item.comments)} engajamento`
-        : labelKey === 'recent'
-          ? `${new Date(item.published_at).toLocaleDateString('pt-BR')}`
-          : `${formatNumber(item.views)} views/dia`;
-
-    li.innerHTML = `<strong>${item.title}</strong><br><span>${labelValue}</span>`;
+    li.innerHTML = `
+      <span class="top-rank">${i + 1}</span>
+      <div class="top-info">
+        <a href="${item.video_url}" target="_blank" rel="noopener" class="top-title">${item.title}</a>
+        <span class="top-meta">${labelFn(item)}</span>
+      </div>
+    `;
     list.appendChild(li);
   });
 }
 
+let subscribersChart = null;
+let viewsChart = null;
+
 function renderHistory(history) {
-  if (typeof Chart === 'undefined') {
-    console.error('Chart.js não foi carregado. Os gráficos não serão renderizados.');
-    return;
-  }
+  if (typeof Chart === 'undefined' || !history.length) return;
 
-  const labels = history.map((item) => new Date(item.collected_at).toLocaleDateString('pt-BR'));
-  const subscribersData = history.map((item) => item.subscribers);
-  const viewsData = history.map((item) => item.total_views);
+  const labels = history.map((r) => new Date(r.collected_at).toLocaleDateString('pt-BR'));
+  const subData = history.map((r) => r.subscribers);
+  const viewData = history.map((r) => r.total_views);
 
-  const createChart = (ctx, label, data, color) => {
-    return new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          label,
-          data,
-          borderColor: color,
-          backgroundColor: 'rgba(78, 124, 255, 0.12)',
-          tension: 0.35,
-          fill: true,
-          pointRadius: 4,
-        }],
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: { ticks: { color: '#9bb1d7' } },
-          y: { ticks: { color: '#9bb1d7' } },
+  const defaults = {
+    type: 'line',
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: {
+          ticks: { color: '#6b8cba', maxRotation: 30 },
+          grid: { color: 'rgba(255,255,255,0.04)' },
         },
-        plugins: {
-          legend: { labels: { color: '#d3e1ff' } },
+        y: {
+          ticks: { color: '#6b8cba' },
+          grid: { color: 'rgba(255,255,255,0.04)' },
         },
       },
-    });
+      plugins: {
+        legend: { labels: { color: '#c5d8f5', font: { size: 12 } } },
+        tooltip: {
+          backgroundColor: 'rgba(10,20,40,0.95)',
+          titleColor: '#c5d8f5',
+          bodyColor: '#8aaad4',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+        },
+      },
+    },
   };
 
-  if (window.subscribersChart) {
-    window.subscribersChart.destroy();
-  }
-  if (window.viewsChart) {
-    window.viewsChart.destroy();
-  }
+  const buildDataset = (label, data, color) => ({
+    label,
+    data,
+    borderColor: color,
+    backgroundColor: `${color}22`,
+    tension: 0.4,
+    fill: true,
+    pointRadius: 3,
+    pointHoverRadius: 6,
+  });
 
-  window.subscribersChart = createChart(document.getElementById('subscribersChart'), 'Inscritos', subscribersData, '#5f8fff');
-  window.viewsChart = createChart(document.getElementById('viewsChart'), 'Views', viewsData, '#ff9f43');
+  if (subscribersChart) subscribersChart.destroy();
+  if (viewsChart) viewsChart.destroy();
+
+  subscribersChart = new Chart(document.getElementById('subscribersChart'), {
+    ...defaults,
+    data: { labels, datasets: [buildDataset('Inscritos', subData, '#5f8fff')] },
+  });
+
+  viewsChart = new Chart(document.getElementById('viewsChart'), {
+    ...defaults,
+    data: { labels, datasets: [buildDataset('Views', viewData, '#ff9f43')] },
+  });
 }
-
-async function loadTopVideos() {
-  try {
-    const topVideos = normalizeTopVideos(await fetchApi('/api/top-videos'));
-    renderTopList('topMostViewed', topVideos.mostViewed, 'views');
-    renderTopList('topHighestEngagement', topVideos.highestEngagement, 'engagement');
-    renderTopList('topMostRecent', topVideos.mostRecent, 'recent');
-    renderTopList('topFastestGrowth', topVideos.fastestGrowth, 'growth');
-  } catch (error) {
-    console.error('Erro ao carregar top vídeos:', error);
-  }
-}
-
 
 function updateLastRefreshTime() {
-  lastUpdateTime = new Date();
-  const timeElement = document.getElementById('lastUpdateTime');
-  if (timeElement) {
-    timeElement.textContent = lastUpdateTime.toLocaleTimeString('pt-BR');
-  }
+  const el = document.getElementById('lastUpdateTime');
+  if (el) el.textContent = new Date().toLocaleTimeString('pt-BR');
 }
 
-function showRefreshStatus(message, success) {
-  const statusEl = document.getElementById('refreshStatus');
-  if (!statusEl) return;
-
-  statusEl.textContent = message;
-  statusEl.className = `status-message ${success ? 'success' : 'error'}`;
-
-  clearTimeout(window.refreshStatusTimeout);
-  window.refreshStatusTimeout = setTimeout(() => {
-    statusEl.textContent = '';
-    statusEl.className = 'status-message hidden';
-  }, 5000);
-}
-
-function normalizeApiData(data) {
+function normalizeArray(data) {
   if (Array.isArray(data)) return data;
-  if (data && typeof data === 'object') {
-    if (Array.isArray(data.value)) return data.value;
-    if (Array.isArray(data.videos)) return data.videos;
-  }
+  if (data && Array.isArray(data.value)) return data.value;
+  if (data && Array.isArray(data.videos)) return data.videos;
   return [];
 }
 
 function normalizeTopVideos(data) {
   if (!data || typeof data !== 'object') return {};
   return {
-    mostViewed: normalizeApiData(data.mostViewed),
-    highestEngagement: normalizeApiData(data.highestEngagement),
-    mostRecent: normalizeApiData(data.mostRecent),
-    fastestGrowth: normalizeApiData(data.fastestGrowth),
+    mostViewed: normalizeArray(data.mostViewed),
+    highestEngagement: normalizeArray(data.highestEngagement),
+    mostRecent: normalizeArray(data.mostRecent),
+    fastestGrowth: normalizeArray(data.fastestGrowth),
   };
 }
 
 async function refreshDashboard() {
-  // Primeiro, solicita atualização dos dados do YouTube
-  try {
-    await fetchApi('/api/refresh-data');
-  } catch (error) {
-    console.error('Falha ao solicitar refresh dos dados do YouTube:', error);
-  }
-
-  // Depois, busca os dados atualizados
-  const [channel, videosResponse, historyResponse] = await Promise.all([
+  const [channel, videosRaw, historyRaw, topVideosRaw] = await Promise.all([
     fetchApi('/api/channel'),
     fetchApi('/api/videos'),
     fetchApi('/api/history'),
+    fetchApi('/api/top-videos'),
   ]);
 
-  const videos = normalizeApiData(videosResponse);
-  const history = normalizeApiData(historyResponse);
-  const totalVideoViews = videos.reduce((sum, video) => sum + video.views, 0);
+  const videos = normalizeArray(videosRaw);
+  const history = normalizeArray(historyRaw);
+  const topVideos = normalizeTopVideos(topVideosRaw);
 
-  renderOverview(channel, history, totalVideoViews);
+  renderOverview(channel, history);
   renderVideos(videos);
-  await loadTopVideos();
 
-  try {
-    renderHistory(history);
-  } catch (error) {
-    console.error('Erro ao renderizar histórico durante refresh:', error);
-  }
+  renderTopList('topMostViewed', topVideos.mostViewed, (v) => `${formatNumber(v.views)} views`);
+  renderTopList('topHighestEngagement', topVideos.highestEngagement, (v) => `${formatNumber((v.likes || 0) + (v.comments || 0))} engajamento`);
+  renderTopList('topMostRecent', topVideos.mostRecent, (v) => new Date(v.published_at).toLocaleDateString('pt-BR'));
+  renderTopList('topFastestGrowth', topVideos.fastestGrowth, (v) => `${formatNumber(Math.round(v.views_per_day || 0))} views/dia`);
 
+  renderHistory(history);
   updateLastRefreshTime();
 }
 
-function startAutoRefresh() {
-  if (autoRefreshInterval) {
-    clearInterval(autoRefreshInterval);
-  }
-
-  autoRefreshInterval = setInterval(async () => {
-    try {
-      await refreshDashboard();
-      console.log('Dashboard atualizado automaticamente');
-    } catch (error) {
-      console.error('Falha no auto-refresh:', error);
-    }
-  }, 5000);
-}
-
-function stopAutoRefresh() {
-  if (autoRefreshInterval) {
-    clearInterval(autoRefreshInterval);
-    autoRefreshInterval = null;
-  }
-}
-
 async function init() {
-  let channel = { channel_name: 'Focus Blues Lab', subscribers: 0, views: 0, videos: 0 };
-  let videos = [];
-  let history = [];
-  let loadedSomething = false;
-
   try {
-    channel = await fetchApi('/api/channel');
-    loadedSomething = true;
-  } catch (error) {
-    console.error('Erro ao carregar /api/channel:', error);
+    await refreshDashboard();
+  } catch (err) {
+    console.error('Erro ao inicializar dashboard:', err);
   }
-
-  try {
-    videos = await fetchApi('/api/videos');
-    loadedSomething = true;
-  } catch (error) {
-    console.error('Erro ao carregar /api/videos:', error);
-  }
-
-  try {
-    history = await fetchApi('/api/history');
-    loadedSomething = true;
-  } catch (error) {
-    console.error('Erro ao carregar /api/history:', error);
-  }
-
-  const normalizedVideos = normalizeApiData(videos);
-  const normalizedHistory = normalizeApiData(history);
-  const totalVideoViews = normalizedVideos.reduce((sum, video) => sum + video.views, 0);
-
-  renderOverview(channel, normalizedHistory, totalVideoViews);
-  renderVideos(normalizedVideos);
-  await loadTopVideos();
-  renderHistory(normalizedHistory);
 
   setupFilters();
   setupSorting();
 
-  startAutoRefresh();
-  updateLastRefreshTime();
-
-  console.log('Dashboard inicializado com auto-refresh a cada 5 segundos');
-
-  if (!loadedSomething) {
-    document.body.insertAdjacentHTML('afterbegin', '<div class="alert">Não foi possível carregar os dados. Verifique o servidor.</div>');
-  }
+  // Atualiza a UI a cada 10 segundos lendo apenas do banco (sem chamar a YouTube API)
+  setInterval(async () => {
+    try {
+      await refreshDashboard();
+    } catch (err) {
+      console.error('Erro no auto-refresh:', err);
+    }
+  }, 10000);
 }
 
-// Cleanup quando a página for fechada
-window.addEventListener('beforeunload', () => {
-  stopAutoRefresh();
-});
-
-if (document.readyState === 'complete') {
-  init();
-} else {
-  window.addEventListener('load', init);
-}
+window.addEventListener('load', init);
